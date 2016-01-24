@@ -1,3 +1,9 @@
+# extensionless files
+*
+!/**/
+!*.*
+!makefile
+
 *.o
 *.d
 

@@ -15,6 +15,7 @@
 #include <iostream>
 
 #define RECV_TIMEOUT	2.0  		// timeout from last i2c receive until end of trial
+#define LINESIZE		20 			// number of bytes to display before taking newline
 
 using namespace std;
 
@@ -136,9 +137,9 @@ int main(int argc, char *argv[]){
     setbuf(stdout, NULL);			// turn off buffering to stdout, so data appears in real time
 
     // demo of expected data. Replace with file read.
-    for (int i=0; i<50; i++){
-    	expected.push_back((uint8_t)i);
-    }
+    //for (int i=0; i<50; i++){
+    //	expected.push_back((uint8_t)i);
+    //}
 
 
     // get expected data from file
@@ -153,11 +154,11 @@ int main(int argc, char *argv[]){
     	int inFileCounter = 0;
 	    printf("Input file contents: \n");
 	    while (inputFile.good()){
-	    	printf("%2X ", ebyte);
-	    	//expected.push_back(ebyte);
+	    	printf("%02X ", ebyte);
+	    	expected.push_back(ebyte);
 	    	ebyte = inputFile.get();
 	    	inFileCounter++;
-	    	if (!(inFileCounter%20)) printf("\n");
+	    	if (!(inFileCounter%LINESIZE)) printf("\n");
 	    }
 	    inputFile.close();
 	    printf("\n");
@@ -166,8 +167,9 @@ int main(int argc, char *argv[]){
     // main read loop
     // interprets multiple bytes received as ASCII data to be displayed
     // single byte as a received byte
-
+	
     char buf [100];
+    read (fd, buf, sizeof buf); // flush anything waiting in the buffer
     while (1){
         int n = read (fd, buf, sizeof buf);  // read up to 100 characters if ready to read
         if (n > 1){
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]){
         	received.push_back(buf[0]);
         	tReceived.push_back(gettime() - tReceiveStart);
         	tLastRecv = gettime();
-        	if (!(tReceived.size()%20)) printf("\n");
+        	if (!(tReceived.size()%LINESIZE)) printf("\n");
         } else if (receiving){
         	if (gettime() - tLastRecv > RECV_TIMEOUT){
         		receiving = false;
@@ -222,10 +224,10 @@ int main(int argc, char *argv[]){
         		vector<uint8_t>::iterator mi = matched.begin();
         		for (unsigned int di=0; di<expected.size(); di++){
         			printf("%02X ", expected[di]);
-        			if ((di && (di+1)%20 == 0) || di == expected.size()-1){
+        			if ((di && (di+1)%LINESIZE == 0) || di == expected.size()-1){
         				printf("\n");
-        				int ri = 19;
-        				if (di == expected.size()-1) ri = di%20;
+        				int ri = LINESIZE-1;
+        				if (di == expected.size()-1) ri = di%LINESIZE;
         				for (; ri>=0; ri--){
         					//printf("di: %d\t ri: %d\n", di, ri);
         					if (mi != matched.end() && expected[di-ri] == *mi){
