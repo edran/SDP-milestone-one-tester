@@ -7,3 +7,6 @@
 *.o
 *.d
 
+# binary files generated for testing
+*.bin
+
